@@ -3,6 +3,11 @@ import { Divider, Stack, TextField } from "@mui/material";
 import markdownit from "markdown-it";
 // import mk from "@iktakahiro/markdown-it-katex";
 import mj from "markdown-it-mathjax3";
+import mh from "markdown-it-highlightjs";
+import hljs from "highlight.js";
+import 'highlight.js/styles/github.css';
+
+hljs.highlightAll();
 
 declare global {
   interface Window {
@@ -16,6 +21,7 @@ const MathJax: FC = () => {
   const markdown = useMemo(() => {
     const md = markdownit();
     // md.use(mk, { output: "mathml" });
+    md.use(mh, { hljs });
     md.use(mj, {
       loader: { load: ["input/tex", "output/chtml"] },
       tex: {
