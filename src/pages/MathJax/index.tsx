@@ -1,11 +1,12 @@
-import { FC, Fragment, useEffect, useMemo, useState } from "react";
+import { FC, Fragment, useMemo, useState } from "react";
 import { Divider, Stack, TextField } from "@mui/material";
 import markdownit from "markdown-it";
-// import mk from "@iktakahiro/markdown-it-katex";
 import mj from "markdown-it-mathjax3";
 import mh from "markdown-it-highlightjs";
 import hljs from "highlight.js";
-import 'highlight.js/styles/github.css';
+import sanitize from "sanitize-html";
+
+import "highlight.js/styles/github.css";
 
 hljs.highlightAll();
 
@@ -19,8 +20,7 @@ const MathJax: FC = () => {
   const [text, setText] = useState("");
 
   const markdown = useMemo(() => {
-    const md = markdownit();
-    // md.use(mk, { output: "mathml" });
+    const md = markdownit({ html: true });
     md.use(mh, { hljs });
     md.use(mj, {
       loader: { load: ["input/tex", "output/chtml"] },
@@ -29,17 +29,13 @@ const MathJax: FC = () => {
           ["$", "$"],
           ["\\(", "\\)"],
         ],
+        macros: {
+          amp: "&"
+        }
       },
     });
-    return { __html: md.render(text) };
+    return { __html: md.render(sanitize(text)) };
   }, [text]);
-
-  // useEffect(() => {
-  //   if (typeof window?.MathJax !== "undefined") {
-  //     console.log(window.MathJax);
-  //     window.MathJax.typeset?.();
-  //   }
-  // }, [markdown]);
 
   return (
     <Fragment>
