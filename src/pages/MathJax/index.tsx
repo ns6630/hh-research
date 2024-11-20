@@ -1,6 +1,14 @@
-import { FC, Fragment, useEffect, useMemo, useState } from "react";
+import { FC, Fragment, useMemo, useState } from "react";
 import { Divider, Stack, TextField } from "@mui/material";
 import markdownit from "markdown-it";
+import mj from "markdown-it-mathjax3";
+import mh from "markdown-it-highlightjs";
+import hljs from "highlight.js";
+import sanitize from "sanitize-html";
+
+import "highlight.js/styles/github.css";
+
+hljs.highlightAll();
 
 declare global {
   interface Window {
@@ -12,23 +20,29 @@ const MathJax: FC = () => {
   const [text, setText] = useState("");
 
   const markdown = useMemo(() => {
-    const md = markdownit();
-    return { __html: md.render(text) };
+    const md = markdownit({ html: true });
+    md.use(mh, { hljs });
+    md.use(mj, {
+      loader: { load: ["input/tex", "output/chtml"] },
+      tex: {
+        inlineMath: [
+          ["$", "$"],
+          ["\\(", "\\)"],
+        ],
+        macros: {
+          amp: "&"
+        }
+      },
+    });
+    return { __html: md.render(sanitize(text)) };
   }, [text]);
-
-  useEffect(() => {
-    if (typeof window?.MathJax !== "undefined") {
-      console.log(window.MathJax);
-      window.MathJax.typeset?.();
-    }
-  }, [markdown]);
 
   return (
     <Fragment>
       <Stack direction="column" spacing={2}>
         <TextField
           fullWidth
-          label="MathJax"
+          label="Markdown"
           multiline
           rows={10}
           defaultValue=""
