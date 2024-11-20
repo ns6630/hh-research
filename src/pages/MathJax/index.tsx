@@ -30,11 +30,13 @@ const MathJax: FC = () => {
           ["\\(", "\\)"],
         ],
         macros: {
-          amp: "&"
-        }
+          amp: "&",
+        },
       },
     });
-    return { __html: md.render(sanitize(text)) };
+    const result = md.render(sanitize(text));
+    console.log(JSON.stringify(result));
+    return { __html: result };
   }, [text]);
 
   return (
