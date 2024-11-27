@@ -1,41 +1,87 @@
-import { FC, Fragment, useCallback, useState } from "react";
-import katex from "katex";
+import { FC, Fragment, useEffect, useState } from "react";
 import { Divider, Stack, TextField } from "@mui/material";
+import { Marked } from "marked";
+import { markedHighlight } from "marked-highlight";
+import markedKatex from "marked-katex-extension";
+import DOMPurify from "dompurify";
+import hljs from "highlight.js/lib/core";
+import c from "highlight.js/lib/languages/c";
+import cpp from "highlight.js/lib/languages/cpp";
+import csharp from "highlight.js/lib/languages/csharp";
+import xml from "highlight.js/lib/languages/xml";
+import java from "highlight.js/lib/languages/java";
+import javascript from "highlight.js/lib/languages/javascript";
+import php from "highlight.js/lib/languages/php";
+import python from "highlight.js/lib/languages/python";
+import typescript from "highlight.js/lib/languages/typescript";
+import sql from "highlight.js/lib/languages/sql";
+import plaintext from "highlight.js/lib/languages/plaintext";
 
-const initialValue = `x = a_0 + \\cfrac{1}{a_1 
-             + \\cfrac{1}{a_2 
-             + \\cfrac{1}{a_3
-             + \\cfrac{1}{a_4} } } }`;
+import "katex/dist/katex.css";
+import "highlight.js/styles/github.css";
 
-// const initialValue = `\\left( \\sum_{k=1}^n a_k b_k \\right)^2 \\leq \\left( \\sum_{k=1}^n a_k^2 \\right) \\left( \\sum_{k=1}^n b_k^2 \\right)`;
-const Katex: FC = () => {
-  const [value, setValue] = useState(initialValue);
-  const refCallback = useCallback(
-    (node: HTMLDivElement | null) => {
-      if (node) {
-        katex.render(value, node, {
-          throwOnError: false,
-          macros: {},
-          output: "mathml",
-        });
-      }
+hljs.registerLanguage("c", c);
+hljs.registerLanguage("cpp", cpp);
+hljs.registerLanguage("csharp", csharp);
+hljs.registerLanguage("html", xml);
+hljs.registerLanguage("java", java);
+hljs.registerLanguage("javascript", javascript);
+hljs.registerLanguage("php", php);
+hljs.registerLanguage("python", python);
+hljs.registerLanguage("typescript", typescript);
+hljs.registerLanguage("sql", sql);
+hljs.registerLanguage("plaintext", plaintext);
+
+const marked = new Marked(
+  markedHighlight({
+    emptyLangClass: "hljs",
+    langPrefix: "hljs language-",
+    highlight(code, lang) {
+      const language = hljs.getLanguage(lang) ? lang : "plaintext";
+      return hljs.highlight(code, { language }).value;
     },
-    [value],
-  );
+  }),
+);
+
+const options = {
+  throwOnError: false,
+};
+marked.use(markedKatex(options));
+
+const getSanitizedHtmlObj = (value: string) => {
+  const sanitizedValue = DOMPurify.sanitize(value);
+  console.log(JSON.stringify(value));
+  return { __html: sanitizedValue };
+};
+
+const Katex: FC = () => {
+  const [value, setValue] = useState("");
+  const [html, setHtml] = useState({ __html: "" });
+
+  useEffect(() => {
+    let markdown = marked.parse(value);
+    if (markdown instanceof Promise) {
+      markdown.then((value) => {
+        setHtml(getSanitizedHtmlObj(value));
+      });
+    } else {
+      setHtml(getSanitizedHtmlObj(markdown));
+    }
+  }, [value]);
 
   return (
     <Fragment>
       <Stack direction="column" spacing={2}>
         <TextField
           fullWidth
-          label="Katex"
+          label="Markdown with TeX"
           multiline
           rows={10}
-          value={value}
-          onChange={(e) => setValue(e.target.value)}
+          defaultValue=""
+          onBlur={(e) => setValue(e.target.value)}
         />
         <Divider flexItem />
-        <div id="katex-block" ref={refCallback} />
+        <div id="katex-block" dangerouslySetInnerHTML={html} />
       </Stack>
     </Fragment>
   );
